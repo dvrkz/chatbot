@@ -1,0 +1,183 @@
+openapi: 3.1.0
+info:
+  title: Caramel AI Tech Support Chat API
+  version: 1.0.0
+  description: |
+    Backend API for the Caramel AI tech support chat assistant.
+
+    Notes that apply to every operation:
+    - There is no authentication in v1 (login is out of scope).
+    - Only the configured frontend origin is allowed by CORS.
+    - No response ever contains an API key, a stack trace, or upstream provider text.
+    - The server does not log request or response bodies.
+servers:
+  - url: http://localhost:8080
+    description: Local development
+paths:
+  /api/chat/stream:
+    post:
+      operationId: streamChat
+      summary: Send a message and stream the assistant's reply
+      description: |
+        Accepts one customer message for a conversation and streams the reply as Server-Sent
+        Events. The conversation context is the recent messages stored under `sessionId`.
+
+        Errors detected before streaming starts (validation, rate limiting) return a normal
+        HTTP error with a problem body. Failures after streaming starts are sent as a final
+        `error` event. See chat-stream-events.md for the event format.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            example:
+              sessionId: 3f9b6c1e-5a2d-4e7b-9c1a-0d8e2f4a6b7c
+              message: Why am I getting a 429 error on the chat endpoint?
+      responses:
+        '200':
+          description: Reply stream. Ends with exactly one `done` or `error` event.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-Sent Events. Event names are token, done, and error.
+              examples:
+                success:
+                  summary: Successful reply
+                  value: |
+                    event: token
+                    data: {"text":"A 429 means "}
+
+                    event: token
+                    data: {"text":"you have hit a rate limit."}
+
+                    event: done
+                    data: {}
+                timeout:
+                  summary: Reply timed out after partial text
+                  value: |
+                    event: token
+                    data: {"text":"A 429 means "}
+
+                    event: error
+                    data: {"code":"REPLY_TIMEOUT"}
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/chat/sessions/{sessionId}:
+    delete:
+      operationId: clearSession
+      summary: Discard a conversation's stored context
+      description: |
+        Removes the stored context for a session. Idempotent: an unknown or already-expired
+        session also returns 204. Used by the "new conversation" action.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session context removed, or none existed.
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /actuator/health:
+    get:
+      operationId: health
+      summary: Liveness check
+      description: Returns only overall status. No details, configuration, or secrets are exposed.
+      responses:
+        '200':
+          description: Service is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [UP]
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required: [sessionId, message]
+      additionalProperties: false
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: Client-generated conversation ID. Not stored by the browser beyond page life.
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: |
+            The customer's message. Blank or whitespace-only input is rejected. The maximum is
+            configurable (`caramel.limits.max-message-chars`); 2000 is the default.
+    ErrorCode:
+      type: string
+      description: Closed set of failure codes. Carries no free text.
+      enum:
+        - VALIDATION_FAILED
+        - RATE_LIMITED
+        - REPLY_TIMEOUT
+        - UPSTREAM_UNAVAILABLE
+        - INTERNAL_ERROR
+    Problem:
+      type: object
+      description: RFC 9457 problem body for errors before streaming starts.
+      required: [status, code]
+      properties:
+        status:
+          type: integer
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        title:
+          type: string
+          description: Generic, fixed title for the code. Never upstream or exception text.
+  responses:
+    ValidationFailed:
+      description: Malformed body, invalid session ID, or blank / over-length message.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            status: 400
+            code: VALIDATION_FAILED
+            title: Invalid request
+    RateLimited:
+      description: Too many requests from this client.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            status: 429
+            code: RATE_LIMITED
+            title: Too many requests
+    InternalError:
+      description: Unexpected failure before streaming started.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            status: 500
+            code: INTERNAL_ERROR
+            title: Something went wrong

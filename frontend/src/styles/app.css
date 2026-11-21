@@ -1,0 +1,634 @@
+/*
+ * Single global stylesheet (prd-ui-2 UI-FR-1). Every value is a token from :root.
+ * Components use one class per rule. Element selectors appear only inside .reply (markdown content).
+ */
+
+:root {
+  /* Color tokens (prd-ui-2 section 5.2, data-model section 4). The former outlined-chip tint is gone: it fails 3:1. */
+  --mist: #ECEBF6;
+  --paper: #FFFFFF;
+  --violet: #6A3DF0;
+  --violet-deep: #4F26C9;
+  --ink: #1F1B33;
+  --slate: #5F5A7A;
+  --coral: #B42340;
+  --coral-tint: #FBE9EE;
+
+  /* Type */
+  --font-ui: 'Figtree Variable', Figtree, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-code: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --fs-sm: 14px;
+  --fs-base: 17px;
+  --fs-md: 20px;
+  --fs-lg: 24px;
+  --lh-reply: 1.55;
+  --lh-code: 1.5;
+  --measure: 68ch;
+
+  /* Spacing */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+
+  /* Radius, set by role (prd-ui-2 section 5.4) */
+  --r-card: 20px;
+  --r-small: 12px;
+  --r-composer: 16px;
+  --r-pill: 999px;
+
+  /* The one soft shadow, used on white surfaces only (prd-ui-2 section 5.1) */
+  --shadow-card: 0 1px 2px rgba(31, 27, 51, 0.06), 0 4px 14px rgba(31, 27, 51, 0.06);
+
+  /* Touch target (FR-033) */
+  --touch: 44px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--mist);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-reply);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Keyboard focus is always visible (FR-030). Nothing removes it. */
+:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Layout shell (T011) ---------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0 var(--sp-4);
+}
+
+.message-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-2) 0;
+  min-width: 0;
+}
+
+.composer-region {
+  flex: 0 0 auto;
+  position: relative;
+  padding: var(--sp-2) 0 max(var(--sp-3), env(safe-area-inset-bottom));
+}
+
+/* ---------- Header (T047) ---------- */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  background: var(--mist);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.mark {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--violet);
+  color: var(--paper);
+  display: grid;
+  place-items: center;
+}
+
+.new-conversation {
+  flex: 0 0 auto;
+  min-height: var(--touch);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-4);
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--coral);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.new-conversation:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.new-conversation:disabled {
+  background: var(--slate);
+  cursor: not-allowed;
+}
+
+/* On phones the title gets its own row, so it stays on one line beside no other content. */
+@media (max-width: 479px) {
+  .app-header {
+    flex-wrap: wrap;
+    row-gap: var(--sp-2);
+  }
+
+  .brand {
+    flex: 1 1 100%;
+  }
+
+  .brand h1 {
+    font-size: var(--fs-base);
+    white-space: nowrap;
+  }
+
+  .new-conversation {
+    margin-left: auto;
+  }
+}
+
+/* ---------- Empty state (T015) ---------- */
+
+.empty-state {
+  padding-top: var(--sp-6);
+}
+
+.empty-state h2 {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.subline {
+  margin: 0 0 var(--sp-6);
+  color: var(--slate);
+}
+
+.section-label {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.starter-row {
+  display: flex;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: var(--sp-1) 0 var(--sp-3);
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+
+.starter-row > li {
+  flex: 0 0 13rem;
+  scroll-snap-align: start;
+}
+
+.starter-card {
+  width: 100%;
+  min-height: var(--touch);
+  padding: var(--sp-4);
+  border: 0;
+  border-radius: var(--r-card);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  text-align: left;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* ---------- Messages (T022) ---------- */
+
+.message-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.message {
+  min-width: 0;
+}
+
+.message-customer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.message-customer p {
+  margin: 0;
+  max-width: 85%;
+  padding: 10px var(--sp-4);
+  border-radius: var(--r-card) var(--r-card) 6px var(--r-card);
+  background: var(--violet);
+  color: #FFFFFF;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.message-assistant {
+  padding: var(--sp-4);
+  border-radius: var(--r-card);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.reply > :first-child {
+  margin-top: 0;
+}
+
+.reply > :last-child {
+  margin-bottom: 0;
+}
+
+.reply p,
+.reply ul,
+.reply ol,
+.reply blockquote {
+  max-width: var(--measure);
+  margin: 0 0 var(--sp-3);
+}
+
+.reply ul,
+.reply ol {
+  padding-left: var(--sp-6);
+}
+
+.reply li + li {
+  margin-top: var(--sp-1);
+}
+
+.reply blockquote {
+  padding-left: var(--sp-3);
+  border-left: 3px solid var(--violet);
+  color: var(--slate);
+}
+
+.reply a {
+  color: var(--violet);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.reply code {
+  font-family: var(--font-code);
+  font-size: var(--fs-sm);
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--mist);
+}
+
+.reply-heading {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* Code blocks (UI-FR-5). The wrapper holds the Copy pill so the pre can scroll sideways. */
+.code-wrap {
+  position: relative;
+  margin: 0 0 var(--sp-3);
+}
+
+.code-block {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  padding-right: 6.5rem;
+  border-radius: var(--r-small);
+  background: var(--mist);
+  color: var(--ink);
+  font-family: var(--font-code);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-code);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.code-block code {
+  font-family: inherit;
+  background: none;
+  padding: 0;
+}
+
+.copy-pill {
+  position: absolute;
+  top: var(--sp-1);
+  right: var(--sp-1);
+  min-height: var(--touch);
+  min-width: var(--touch);
+  padding: 0 var(--sp-3);
+  border: 2px solid var(--violet);
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  color: var(--violet);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.copy-pill:hover {
+  background: var(--violet);
+  color: #FFFFFF;
+}
+
+.table-scroll {
+  max-width: 100%;
+  margin: 0 0 var(--sp-3);
+  overflow-x: auto;
+}
+
+.table-scroll table {
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.table-scroll th,
+.table-scroll td {
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--slate);
+}
+
+/* ---------- Waiting and streaming indicator (T022, T041) ---------- */
+
+.typing-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  color: var(--slate);
+}
+
+.typing-bar {
+  position: relative;
+  width: 120px;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--mist);
+  overflow: hidden;
+}
+
+.typing-bar-segment {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 35%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--violet);
+  transform: translateX(40%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .typing-bar-segment {
+    animation: typing-sweep 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes typing-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(290%);
+  }
+}
+
+/* Reduced motion: the bar stays a static partial fill (FR-032). Nothing else animates. */
+@media (prefers-reduced-motion: reduce) {
+  .typing-bar-segment {
+    animation: none;
+  }
+
+  .copy-pill,
+  .starter-card,
+  .new-conversation {
+    transition: none;
+  }
+}
+
+/* ---------- Notices and errors (T036) ---------- */
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-small);
+  background: var(--coral-tint);
+  color: var(--coral);
+}
+
+.notice p {
+  margin: 0;
+  max-width: var(--measure);
+}
+
+.pill-outline-coral {
+  min-height: var(--touch);
+  padding: 0 var(--sp-4);
+  border: 2px solid var(--coral);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--coral);
+  font-weight: 600;
+}
+
+.pill-outline-coral:hover {
+  background: var(--coral);
+  color: #FFFFFF;
+}
+
+/* ---------- Composer (T033) ---------- */
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  border-radius: var(--r-composer);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+}
+
+.composer-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-2);
+}
+
+.composer textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 1.5em;
+  margin: 0;
+  padding: var(--sp-1) var(--sp-1);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 16px; /* 16 px or larger so mobile browsers do not zoom (FR-034) */
+  line-height: 1.5;
+  resize: none;
+  overflow-y: hidden;
+}
+
+.composer textarea::placeholder {
+  color: var(--slate);
+  opacity: 1;
+}
+
+.send-button {
+  flex: 0 0 var(--touch);
+  width: var(--touch);
+  height: var(--touch);
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #FFFFFF;
+}
+
+.send-button:hover:not(:disabled) {
+  background: var(--violet-deep);
+}
+
+.send-button:disabled {
+  background: var(--slate);
+  cursor: not-allowed;
+}
+
+.composer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: 1.4em;
+  font-size: var(--fs-sm);
+  color: var(--slate);
+}
+
+.counter {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.counter-over {
+  color: var(--coral);
+  font-weight: 600;
+}
+
+.note {
+  margin: 0;
+  color: var(--coral);
+  font-size: var(--fs-sm);
+}
+
+.composer-hint {
+  margin: 0;
+  color: var(--slate);
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 479px) {
+  .composer-hint {
+    display: none;
+  }
+}
+
+/* ---------- Jump to latest (T033) ---------- */
+
+.jump-pill {
+  position: absolute;
+  top: calc(-1 * var(--touch) - var(--sp-2));
+  left: 50%;
+  transform: translateX(-50%);
+  min-height: var(--touch);
+  padding: 0 var(--sp-4);
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--violet);
+  color: #FFFFFF;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.jump-pill:hover {
+  background: var(--violet-deep);
+}
+
+/* ---------- Touch and overflow safety (T040, T042) ---------- */
+
+button,
+a,
+textarea {
+  min-width: 0;
+}
+
+.message-assistant p,
+.message-customer p {
+  overflow-wrap: anywhere;
+}
